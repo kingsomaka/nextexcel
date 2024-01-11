@@ -149,6 +149,7 @@ export default function Home() {
         _handleFile(fileObj);
       }
       else {
+        alert("xlsx only please...");
         // setState({
         //   isFormInvalid: true,
         //   uploadedFileName: ""
