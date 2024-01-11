@@ -1,112 +1,203 @@
-import Image from 'next/image'
+"use client";
+
+// import {OutTable, ExcelRenderer} from 'react-excel-renderer';
+const ExcelJS = require('exceljs');
+import * as XLSX from 'xlsx';
+import Image from 'next/image';
+import { useState, useRef } from 'react';
+
+interface Foo {
+  items: any[];
+}
 
 export default function Home() {
+  const [state, setState] = useState<Foo>({ items: [] });
+  const [headRow, setHeadRow] = useState<string[]>([]);
+  const [dataRow, setDataRow] = useState<string[]>([]);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // const renderFile = (fileObj: any) => {
+  //   //just pass the fileObj as parameter
+  //   ExcelRenderer(fileObj, (err, resp) => {
+  //     if (err) {
+  //       console.log(err);
+  //     }
+  //     else {
+  //       this.setState({
+  //         dataLoaded: true,
+  //         cols: resp.cols,
+  //         rows: resp.rows
+  //       });
+  //     }
+  //   });
+  // }
+
+  const renderFile = (fileObject: any) => {
+    // const renderFile = () => {
+
+
+    // const files = document.querySelector<HTMLInputElement>('#file1').files;
+    // const fileObject = files[0]; 
+    if (typeof fileObject === "undefined") {
+      console.error("none, fileObject");
+      return;
+    }
+    //console.log(fileObject);
+    const blobURL = window.URL.createObjectURL(fileObject);
+    console.log(blobURL);
+    const xhr = new XMLHttpRequest();
+    xhr.onload = function () {
+      const result = xhr.response; // ArrayBuffer
+      //      console.log(result);
+      const data = new Uint8Array(result);
+      //      console.log(data);
+      loadExcelData(data);
+    };
+    xhr.responseType = "arraybuffer";
+    xhr.open("GET", blobURL);
+    xhr.send();
+    console.log("start-upload");
+  }
+
+  // async loadExcelData(data: any){
+  const loadExcelData = async (data: any) => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(data);
+      const worksheet = workbook.getWorksheet('sheet1');
+      // worksheet.pageSetup = { orientation: 'portrait' };
+      const startRow = 4;
+      const items: any[] = [];
+      let row = worksheet.getRow(1);
+      for (let i = startRow; i < 11; i++) {
+        row = worksheet.getRow(i);
+        if (row.getCell(1).value !== null) {
+          console.log(row.getCell(1).value);
+          let item = {
+            ID: row.getCell(1).value,
+            NAME: row.getCell(2).value,
+            VALUE: row.getCell(3).value,
+          }
+          items.push(item);
+        }
+      }
+      //    console.log(items);
+      setState({ items: items });
+      console.log(JSON.stringify(state.items));
+      alert("complete load data");
+    } catch (e) {
+      console.error(e);
+      alert("Error, load data");
+    }
+  }
+
+  const _handleFile = async (e: any) => {
+    console.log('reading input file:');
+    // const file = e.target.files[0];
+    // const data = await file.arrayBuffer();
+    const data = await e.arrayBuffer();
+    const workbook = XLSX.read(data);
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData: any = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      defval: "",
+    });
+
+    const headers: any = jsonData[0];
+    const heads = headers.map((head: any) => ({ title: head, field: head }));
+    jsonData.splice(0, 1);
+
+
+    setHeadRow(headers);
+    setDataRow(jsonData);
+    convertToJson(headers, jsonData);
+
+    //console.log(e.target.files[0]);
+    //console.log(workbook);
+    console.log(jsonData);
+  }
+
+  const convertToJson = async (headers: any, data: any) => {
+    const rows: any = [];
+    data.forEach(async (row: any) => {
+      let rowData: any = {};
+      row.forEach(async (element: any, index: any) => {
+        rowData[headers[index]] = element;
+      })
+      console.log('rowData--->', rowData);
+      rows.push(rowData);
+    });
+    return rows;
+
+  }
+
+  const fileHandler = (event: any) => {
+    if (event.target.files.length) {
+      let fileObj = event.target.files[0];
+      let fileName = fileObj.name;
+
+
+      //check for file extension and pass only if it is .xlsx and display error message otherwise
+      if (fileName.slice(fileName.lastIndexOf('.') + 1) === "xlsx") {
+        // setState({
+        //   uploadedFileName: fileName,
+        //   isFormInvalid: false
+        // });
+        // renderFile(fileObj)
+        // renderFile();
+        _handleFile(fileObj);
+      }
+      else {
+        // setState({
+        //   isFormInvalid: true,
+        //   uploadedFileName: ""
+        // })
+      }
+    }
+  }
+
+  const openFileBrowser = () => {
+    fileInputRef.current!.click();
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <main className="flex min-h-screen flex-col items-center justify-between p-4 w-screen bg-slate-500">
+      <div className="z-10 w-fit flex flex-col items-center justify-between font-mono text-sm lg:flex bg-slate-500">
+        
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+        {/* <button color="info" style={{color: "white", zIndex: 0}} onClick={this.openFileBrowser.bind(this)}><i className="cui-file"></i> Browse&hellip;</button> */}
+        <button className=' bg-violet-600 py-2 px-4' style={{ color: "black", zIndex: 0 }} onClick={openFileBrowser}>Browse&hellip;</button>
+        {/* <input type="file" hidden onChange={this.fileHandler.bind(this)} ref={fileInputRef} onClick={(event)=> { event.target.value = null }} style={{"padding":"10px"}} /> */}
+        <input type="file" name="file1" id="file1" hidden ref={fileInputRef} onChange={(event) => { fileHandler(event); }} onClick={(event) => { event.currentTarget.value = '' }} style={{ "padding": "10px" }} />
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+        {/* const [headRow, setHeadRow] = useState<string[]>([]);
+  const [dataRow */}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+        {/* <h3>XXX経費資料</h3> */}
+        {/* <div className="overflow-x-auto"> */}
+        <table className="table table-zebra">
+          <thead>
+            <tr>
+              {headRow.map((item: any, index: number) => (
+                <th key={index}>{item}</th>
+              ))}
+            </tr>            
+          </thead>
+          <tbody>
+            {dataRow && dataRow.map((item: any, index: number) => (
+            <tr key={index}>
+              {item.map((rowitem: any, rowindex: number) => (
+                <td key={rowindex}>{rowitem}</td>
+            ))}
+            </tr>
+            ))}
+          </tbody>
+        </table>
+        {/* </div> */}
+        
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        
       </div>
     </main>
   )

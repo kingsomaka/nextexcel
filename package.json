@@ -6,22 +6,47 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@headlessui/react": "^0.2.0",
+    "exceljs": "^4.4.0",
+    "next": "14.0.4",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.0.4"
+    "react-excel-renderer": "^1.1.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@babel/core": "^7.12.10",
+    "@storybook/addon-actions": "^6.1.12",
+    "@storybook/addon-essentials": "^7.6.7",
+    "@storybook/addon-info": "^5.3.21",
+    "@storybook/addon-interactions": "^7.6.7",
+    "@storybook/addon-knobs": "^6.1.14",
+    "@storybook/addon-links": "^7.6.7",
+    "@storybook/addon-notes": "^5.3.21",
+    "@storybook/addon-onboarding": "^1.0.10",
+    "@storybook/addons": "^6.1.14",
+    "@storybook/blocks": "^7.6.7",
+    "@storybook/nextjs": "^7.6.7",
+    "@storybook/react": "^7.6.7",
+    "@storybook/test": "^7.6.7",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
-    "postcss": "^8",
-    "tailwindcss": "^3.3.0",
+    "babel-loader": "^8.2.2",
+    "daisyui": "^4.5.0",
     "eslint": "^8",
-    "eslint-config-next": "14.0.4"
+    "eslint-config-next": "14.0.4",
+    "eslint-plugin-storybook": "^0.6.15",
+    "postcss": "^8",
+    "storybook": "^7.6.7",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
   }
 }
